@@ -7,7 +7,16 @@ public class Server {
 
 	public static void main(String args[]) {
 
-		Map <Player, GameRoom> playerList = new HashMap<Player, GameRoom>();
+		Map<Player, GameRoom> playerList = new HashMap<Player, GameRoom>();
+		Map<String, String> userCredentials = new HashMap<String, String>();
+		Map<String, Integer> leaderBoards = new HashMap<String, Integer>();
+		userCredentials.put("John", "johndoe");
+		userCredentials.put("Jane", "janedoe");
+		userCredentials.put("Jack", "jackdoe");
+		
+		leaderBoards.put("John", 3);
+		leaderBoards.put("Jane", 4);
+		leaderBoards.put("Jack", 2);
 
 		if (args.length != 0) {
 			System.out.println("Usage: Server");
@@ -30,7 +39,7 @@ public class Server {
 			try {
 				s = ss2.accept();
 				System.out.println("Connection established from " + s.getLocalAddress());
-				ServerThread st = new ServerThread(s, playerList);
+				ServerThread st = new ServerThread(s, playerList, userCredentials, leaderBoards);
 				st.start();
 
 			}
@@ -45,65 +54,6 @@ public class Server {
 	}
 }
 
-class ServerAuthenticationHandler {
-	BufferedReader inputStream;
-	PrintWriter outputStream;
-	Socket socket;
-	String line = null;
-	Map<Player, GameRoom> playerlist;
-
-	public ServerAuthenticationHandler(BufferedReader is, PrintWriter os, Socket s, Map<Player, GameRoom> pl) {
-		
-		inputStream = is;
-		outputStream = os;
-		socket = s;
-		playerlist = pl;
-
-	}
-
-	public Player authenticate() {
-
-		String unValue;
-		String pwValue;
-		Player player = null;
-		try {
-			String username = "n1 Connected to IP Address: " + socket.getLocalAddress() + " Port: " + socket.getPort()
-					+ "\n" + "n3 Enter username: ";
-			outputStream.println(username);
-			outputStream.flush();
-			line = inputStream.readLine();
-			while (line == null || line.isEmpty()) {
-				outputStream.println("n3 Please enter a valid username: ");
-				outputStream.flush();
-				line = inputStream.readLine();
-
-			}
-			unValue = line;
-
-			String password = "n3 Enter password: ";
-			outputStream.println(password);
-			outputStream.flush();
-			line = inputStream.readLine();
-			while (line == null || line.isEmpty()) {
-				outputStream.println("n3 Please enter a valid password: ");
-				outputStream.flush();
-				line = inputStream.readLine();
-
-			}
-			pwValue = line;
-			player = new Player(unValue);
-			playerlist.put(player, null);
-			String loggedIn = "n1 You are logged in " + player.getUserName() + "\n" + "n1 You are in lobby 1";
-			outputStream.println(loggedIn);
-			outputStream.flush();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return player;
-	}
-
-}
 
 class ServerThread extends Thread {
 
@@ -112,12 +62,16 @@ class ServerThread extends Thread {
 	Socket s = null;
 	String line;
 	Map<Player, GameRoom> pl;
-	Player player = null; 
+	Map<String, String> uc;
+	Map<String, Integer> lb;
+	Player player = null;
 	Lobby lobby = null;
 
-	public ServerThread(Socket s, Map<Player, GameRoom> pl) {
+	public ServerThread(Socket s, Map<Player, GameRoom> pl, Map<String, String> uc, Map<String, Integer> lb) {
 		this.s = s;
 		this.pl = pl;
+		this.uc = uc;
+		this.lb = lb; 
 
 	}
 
@@ -131,24 +85,26 @@ class ServerThread extends Thread {
 		}
 
 		try {
-			ServerAuthenticationHandler authHandler = new ServerAuthenticationHandler(inputStream, outputStream, s, pl);
+			ServerAuthenticationHandler authHandler = new ServerAuthenticationHandler(inputStream, outputStream, s, pl,
+					uc);
 			player = authHandler.authenticate();
 			lobby = new Lobby(inputStream, outputStream, s, pl, player);
 			line = inputStream.readLine();
-			while (line != null) {				
+			while (line != null) {
 				if (line.substring(3, line.length()).equalsIgnoreCase("logout")) {
 					lobby.logout();
 					line = inputStream.readLine();
 
-				}
-				else if (line.substring(3, line.length()).equalsIgnoreCase("list")){
+				} else if (line.substring(3, line.length()).equalsIgnoreCase("list")) {
 					lobby.list();
 					line = inputStream.readLine();
 
+				} else if (line.substring(3, line.length()).equalsIgnoreCase("leaderboard")) {
+					lobby.leaderboard(lb);
+					line = inputStream.readLine();
 				}
-			
+
 			}
-			
 
 		} catch (NullPointerException e) {
 			e.printStackTrace();
@@ -160,7 +116,7 @@ class ServerThread extends Thread {
 
 		finally {
 			try {
-				
+
 				System.out.println("Connection Closing..");
 				if (inputStream != null) {
 					inputStream.close();
@@ -182,4 +138,135 @@ class ServerThread extends Thread {
 			}
 		} // end finally
 	}
+}
+
+class ServerAuthenticationHandler {
+	BufferedReader inputStream;
+	PrintWriter outputStream;
+	Socket socket;
+	String line = null;
+	Map<String, String> userCredentials;
+	Map<Player, GameRoom> playerlist;
+
+	public ServerAuthenticationHandler(BufferedReader is, PrintWriter os, Socket s, Map<Player, GameRoom> pl,
+			Map<String, String> uc) {
+
+		inputStream = is;
+		outputStream = os;
+		socket = s;
+		playerlist = pl;
+		userCredentials = uc;
+
+	}
+
+	public Player authenticate() {
+
+		String unValue;
+		String pwValue;
+		Player player = null;
+		boolean foundUser = false;
+		boolean validUser = false;
+		boolean newUser = false;
+		try {
+			String username = "n1 Connected to IP Address: " + socket.getLocalAddress() + " Port: " + socket.getPort()
+					+ "\n" + "n3 Enter username: ";
+			outputStream.println(username);
+			outputStream.flush();
+			line = inputStream.readLine();
+			while ((line == null || line.isEmpty())) {
+				outputStream.println("n3 Please enter a valid username: ");
+				outputStream.flush();
+				line = inputStream.readLine();
+			}
+			for (Map.Entry<String, String> entry : userCredentials.entrySet()) {
+				if (entry.getKey().equals(line)) {
+
+					foundUser = true;
+				}
+
+			}
+
+			unValue = line;
+
+			while (!foundUser) {
+				outputStream.println("n4 Unable to find username. Do you wish to create a new account? ");
+				outputStream.flush();
+				line = inputStream.readLine();
+				if (line.equals("yes")) {
+
+					userCredentials.put(unValue, null);
+					foundUser = true;
+					newUser = true;
+				} else {
+					while ((line == null || line.isEmpty() || line.equals("no"))) {
+						outputStream.println("n3 Enter username: ");
+						outputStream.flush();
+						line = inputStream.readLine();
+					}
+					for (Map.Entry<String, String> entry : userCredentials.entrySet()) {
+						if (entry.getKey().equals(line)) {
+
+							foundUser = true;
+							unValue = line;
+
+						}
+					}
+				}
+			}
+
+			String password = "n3 Enter password: ";
+			outputStream.println(password);
+			outputStream.flush();
+			line = inputStream.readLine();
+			while ((line == null || line.isEmpty())) {
+				outputStream.println("n3 Please enter a valid password: ");
+				outputStream.flush();
+				line = inputStream.readLine();
+			}
+			if (!newUser) {
+				for (Map.Entry<String, String> entry : userCredentials.entrySet()) {
+					if (entry.getKey().equals(unValue) && entry.getValue().equals(line)) {
+
+						validUser = true;
+					}
+
+				}
+				while (!validUser) {
+					outputStream.println("n4 Invalid password. Please enter a valid password: ");
+					outputStream.flush();
+					line = inputStream.readLine();
+					for (Map.Entry<String, String> entry : userCredentials.entrySet()) {
+						if (entry.getKey().equals(unValue) && entry.getValue().equals(line)) {
+
+							validUser = true;
+						}
+					}
+				}
+			}
+
+			pwValue = line;
+
+			if (newUser) {
+
+				for (Map.Entry<String, String> entry : userCredentials.entrySet()) {
+					if (entry.getKey().equals(unValue)) {
+
+						entry.setValue(pwValue);
+					}
+
+				}
+			}
+
+			player = new Player(unValue);
+			playerlist.put(player, null);
+			String loggedIn = "n1 You are logged in " + player.getUserName() + "\n" + "n1 You are in lobby 1";
+			outputStream.println(loggedIn);
+			outputStream.flush();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return player;
+	}
+
 }

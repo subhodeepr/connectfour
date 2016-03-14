@@ -18,6 +18,8 @@ public class Lobby {
 	BufferedReader inputStream;
 	PrintWriter outputStream;
 	Map<Player, GameRoom> playerList;
+	Map<String, String> userCredentials;
+
 	Player player;
 
 	public Lobby(BufferedReader is, PrintWriter os, Socket s, Map<Player, GameRoom> plist, Player pl) {
@@ -92,5 +94,27 @@ public class Lobby {
 	public void invalidCommand() {
 		System.out.println("Invalid command. Please enter a valid command");
 
+	}
+
+
+	public void leaderboard(Map<String, Integer> lb) {
+		try {
+			String players = "";
+			String scores = "";
+
+			for (Map.Entry<String, Integer> entry : lb.entrySet()) {
+				players += entry.getKey() + ",";
+				scores += entry.getValue() + ",";
+
+			}
+			outputStream.println(players);
+			outputStream.flush();
+			outputStream.println(scores);
+			outputStream.flush();
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+
+		}
+		
 	}
 }

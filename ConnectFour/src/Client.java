@@ -36,6 +36,10 @@ public class Client {
 				else if (line.equalsIgnoreCase("list")){
 					client.list();
 				}
+				else if(line.equalsIgnoreCase("leaderboard")){
+					
+					client.leaderboard();
+				}
 				else{
 					client.invalidCommand();
 
@@ -52,7 +56,35 @@ public class Client {
 
 	}
 	
-	public void list(){
+	private void leaderboard() {
+		try {
+			line = "s1 leaderboard";
+			outputStream.println(line);
+			outputStream.flush();
+			String userNames;
+			String gameRooms = null; 
+			userNames = inputStream.readLine();
+			gameRooms = inputStream.readLine();
+		    String[] userNameArray = userNames.split(",");
+		    String[] scoresArray = gameRooms.split(",");
+		    Map<String, String> leaderboard = new HashMap <String, String>();
+			for (int i = 0; i < userNameArray.length; i++){
+				
+				leaderboard.put(userNameArray[i], scoresArray[i]);
+			}
+			for (Map.Entry<String, String> entry : leaderboard.entrySet()){
+				
+				System.out.println("Player: " + entry.getKey() + " | " + " Score: " +  entry.getValue());
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("Client read error");
+		}
+		
+	}
+
+	private void list(){
 		try {
 			line = "s1 list";
 			outputStream.println(line);
@@ -81,7 +113,7 @@ public class Client {
 		
 	}
 	
-	public void logout(){
+	private void logout(){
 		
 		try {
 			line = "s1 logout";
@@ -138,14 +170,14 @@ class ClientAuthenticationHandler {
 
 	}
 
-	public void authenticate() {
+	void authenticate() {
 
 		try {
 			String response = null;
 			response = inputStream.readLine();
 			System.out.println(response.substring(3, response.length()));
 			response = inputStream.readLine();
-			while (response.substring(0, 2).equals("n3")) {
+			while (response.substring(0, 2).equals("n3") || response.substring(0, 2).equals("n4") ) {
 				System.out.print(response.substring(3, response.length()));
 				line = bufferedReader.readLine();
 				outputStream.println(line);
