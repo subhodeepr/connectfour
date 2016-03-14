@@ -1,9 +1,13 @@
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Server {
 
 	public static void main(String args[]) {
+
+		Map <Player, GameRoom> playerList = new HashMap<Player, GameRoom>();
 
 		if (args.length != 0) {
 			System.out.println("Usage: Server");
@@ -26,7 +30,7 @@ public class Server {
 			try {
 				s = ss2.accept();
 				System.out.println("Connection established from " + s.getLocalAddress());
-				ServerThread st = new ServerThread(s);
+				ServerThread st = new ServerThread(s, playerList);
 				st.start();
 
 			}
@@ -46,19 +50,22 @@ class ServerAuthenticationHandler {
 	PrintWriter outputStream;
 	Socket socket;
 	String line = null;
+	Map<Player, GameRoom> playerlist;
 
-	public ServerAuthenticationHandler(BufferedReader is, PrintWriter os, Socket s) {
+	public ServerAuthenticationHandler(BufferedReader is, PrintWriter os, Socket s, Map<Player, GameRoom> pl) {
+		
 		inputStream = is;
 		outputStream = os;
 		socket = s;
+		playerlist = pl;
 
 	}
 
-	public void authenticate() {
+	public Player authenticate() {
 
 		String unValue;
 		String pwValue;
-
+		Player player = null;
 		try {
 			String username = "n1 Connected to IP Address: " + socket.getLocalAddress() + " Port: " + socket.getPort()
 					+ "\n" + "n3 Enter username: ";
@@ -84,15 +91,16 @@ class ServerAuthenticationHandler {
 
 			}
 			pwValue = line;
-
-			String loggedIn = "n1 You are logged in " + unValue + "\n" + "n1 You are in lobby 1";
+			player = new Player(unValue);
+			playerlist.put(player, null);
+			String loggedIn = "n1 You are logged in " + player.getUserName() + "\n" + "n1 You are in lobby 1";
 			outputStream.println(loggedIn);
 			outputStream.flush();
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+		return player;
 	}
 
 }
@@ -103,9 +111,14 @@ class ServerThread extends Thread {
 	PrintWriter outputStream = null;
 	Socket s = null;
 	String line;
+	Map<Player, GameRoom> pl;
+	Player player = null; 
+	Lobby lobby = null;
 
-	public ServerThread(Socket s) {
+	public ServerThread(Socket s, Map<Player, GameRoom> pl) {
 		this.s = s;
+		this.pl = pl;
+
 	}
 
 	public void run() {
@@ -118,27 +131,19 @@ class ServerThread extends Thread {
 		}
 
 		try {
-			ServerAuthenticationHandler authHandler = new ServerAuthenticationHandler(inputStream, outputStream, s);
-			authHandler.authenticate();
+			ServerAuthenticationHandler authHandler = new ServerAuthenticationHandler(inputStream, outputStream, s, pl);
+			player = authHandler.authenticate();
+			lobby = new Lobby(inputStream, outputStream, s, pl, player);
 			line = inputStream.readLine();
-			while (line != null) {
+			while (line != null) {				
 				if (line.substring(3, line.length()).equalsIgnoreCase("logout")) {
-					String logoutConf = "n3 Are you sure you want to logout? ";
-					outputStream.println(logoutConf);
-					outputStream.flush();
+					lobby.logout();
 					line = inputStream.readLine();
-					if (line.equalsIgnoreCase("yes"))
-					{
-						outputStream.println("1");
-						outputStream.flush();
-					}
-					else{
-						
-						outputStream.println("0");
-						outputStream.flush();
-						line = inputStream.readLine();
 
-					}
+				}
+				else if (line.substring(3, line.length()).equalsIgnoreCase("list")){
+					lobby.list();
+					line = inputStream.readLine();
 
 				}
 			
@@ -170,6 +175,7 @@ class ServerThread extends Thread {
 					s.close();
 					System.out.println("Socket Closed");
 				}
+				pl.remove(player);
 
 			} catch (IOException ie) {
 				System.out.println("Socket Close Error");

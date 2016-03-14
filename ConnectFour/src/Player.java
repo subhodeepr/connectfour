@@ -9,8 +9,9 @@ public class Player {
 	private Boolean connected;
 	private char token;
 	
-	public void player(String username){
-		
+	public Player(String name){
+		username = name; 	
+
 	}
 	
 	public String getUserName(){

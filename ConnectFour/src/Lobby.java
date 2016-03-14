@@ -3,73 +3,91 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Lobby {
 	int maxCapactity;
 	int connectedUsers;
 	int gamesInProgress;
-	private String playerList[];
 	String ranking[];
-	
+
 	Socket socket;
 	String line;
 	BufferedReader inputStream;
-	BufferedReader bufferedReader;
 	PrintWriter outputStream;
-	
-	
-	public Lobby(BufferedReader br, BufferedReader is, PrintWriter os, Socket s)
-	{
-		bufferedReader = br;
+	Map<Player, GameRoom> playerList;
+	Player player;
+
+	public Lobby(BufferedReader is, PrintWriter os, Socket s, Map<Player, GameRoom> plist, Player pl) {
 		inputStream = is;
 		outputStream = os;
 		socket = s;
-		
-	}
-	
+		playerList = plist;
+		player = pl;
 
-	public void spectateGame(String gameRoom){
-		
 	}
-	public void challengePlayer(String username){
-		
+
+	public void spectateGame(String gameRoom) {
+
 	}
-	public void logout(){
-		
+
+	public void challengePlayer(String username) {
+
+	}
+
+	public void list() {
 		try {
-			line = "s1 logout";
-			outputStream.println(line);
+			String players = "";
+			String gameRooms = "";
+
+			for (Map.Entry<Player, GameRoom> entry : playerList.entrySet()) {
+				players += entry.getKey().getUserName() + ",";
+				try {
+					gameRooms += entry.getValue().getGameRoomName() + ",";
+				} catch (NullPointerException e) {
+
+					gameRooms += "Lobby" + ",";
+
+				}
+
+			}
+			outputStream.println(players);
 			outputStream.flush();
-			
-			String response = null;
-			response = inputStream.readLine();
-			
-			if (response.substring(0, 2).equals("n3")) {
-				System.out.print(response.substring(3, response.length()));
-				line = bufferedReader.readLine();
-				outputStream.println(line);
+			outputStream.println(gameRooms);
+			outputStream.flush();
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+
+		}
+	}
+
+	public void logout() {
+		try {
+			String logoutConf = "n3 Are you sure you want to logout? ";
+			outputStream.println(logoutConf);
+			outputStream.flush();
+			line = inputStream.readLine();
+			if (line.equalsIgnoreCase("yes")) {
+				outputStream.println("1");
 				outputStream.flush();
-				response = inputStream.readLine();
+				playerList.remove(player);
+			} else {
+
+				outputStream.println("0");
+				outputStream.flush();
+
 			}
-			if (response.equals("1")){
-				inputStream.close();
-				outputStream.close();
-				bufferedReader.close();
-				socket.close();
-				System.out.println("Logged out from server");
-				System.exit(0);
-			}
+		} catch (NullPointerException e) {
+			e.printStackTrace();
 
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
-			System.out.println("Client read error");
 		}
-		
-	}
-	public String[] returnPlayers(){
-		return playerList;
-	}
 
+	}
 
 	public void invalidCommand() {
 		System.out.println("Invalid command. Please enter a valid command");
