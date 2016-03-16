@@ -18,7 +18,4 @@ public class Lobby {
 	public String[] returnPlayers(){
 		return playerList;
 	}
-
-	//create a lobby chat object
-	//create a global chat object
 }

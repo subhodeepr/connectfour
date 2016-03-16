@@ -12,6 +12,7 @@ public class Communication {
 	//three parameter message
 	public void message(char command, String message){
 		newMessage = message;
+		testMessage
 	}
 }
 
