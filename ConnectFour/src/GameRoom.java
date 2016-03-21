@@ -9,11 +9,21 @@ public class GameRoom {
 	char base_value = 'A';
 	int ascii_value = (int) base_value;
 	private String gameRoomName = null;
+	private Player player1;
+	private Player player2;
 
 	
-	public GameRoom(String grn){
+	public GameRoom(Player p1, String grn){
 		
 		gameRoomName = grn; 
+		player1 = p1;
+	}
+	
+	public GameRoom(Player p1, Player p2, String grn){
+		
+		gameRoomName = grn; 
+		player1 = p1;
+		player2 = p2;
 	}
 	
 	// set the initial board values

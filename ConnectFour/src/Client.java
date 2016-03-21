@@ -2,6 +2,101 @@ import java.io.*;
 import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.StringTokenizer;
+
+class IncomingMessageThread implements Runnable {
+	Socket socket = null;
+	String line = null;
+	BufferedReader bufferedReader = null;
+	BufferedReader inputStream = null;
+	PrintWriter outputStream = null;
+	Client client; 
+
+	public IncomingMessageThread(Socket s, BufferedReader br, BufferedReader is, PrintWriter os, Client cl) {
+		socket = s;
+		bufferedReader = br;
+		inputStream = is;
+		outputStream = os;
+		client = cl;
+	}
+
+	public void run() {
+
+		try {
+			while (inputStream.ready()) {
+				line = inputStream.readLine();
+				while (line != null) {
+
+					System.out.println(line);
+					line = inputStream.readLine();
+
+				}
+
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+}
+
+class UserInputThread implements Runnable {
+	Socket socket = null;
+	String line = null;
+	BufferedReader bufferedReader = null;
+	BufferedReader inputStream = null;
+	PrintWriter outputStream = null;
+	Client client;
+
+	public UserInputThread(Socket s, BufferedReader br, BufferedReader is, PrintWriter os, Client cl) {
+		socket = s;
+		bufferedReader = br;
+		inputStream = is;
+		outputStream = os;
+		client = cl;
+	}
+
+	public void run() {
+
+		try {
+				line = bufferedReader.readLine();
+				while (line != null) {
+					String[] commands = line.split("\\s+");
+
+					if (line.equalsIgnoreCase("logout")) {
+						client.logout();
+					} else if (line.equalsIgnoreCase("list")) {
+						client.list();
+					} else if (line.equalsIgnoreCase("leaderboard")) {
+						client.leaderboard();
+					} else if (line.substring(0, 3).equalsIgnoreCase("new") && commands.length == 2) {
+						client.newGameroom(line);
+					} else if (line.substring(0, 3).equalsIgnoreCase("new") && commands.length == 3) {
+						client.newGameroomWithPlayer(line);
+					} else if (line.substring(0, 3).equalsIgnoreCase("ban")) {
+						client.banUser(line);
+					} else if (line.substring(0, 3).equalsIgnoreCase("unban")) {
+						client.unbanUser(line);
+					}
+
+					else {
+						client.invalidCommand();
+
+					}
+					line = bufferedReader.readLine();
+
+				}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+}
 
 public class Client {
 
@@ -16,7 +111,7 @@ public class Client {
 			System.out.println("Usage: Client <Server IP>");
 			System.exit(1);
 		}
-		
+
 		String address = args[0];
 
 		try {
@@ -24,30 +119,15 @@ public class Client {
 			bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 			inputStream = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			outputStream = new PrintWriter(socket.getOutputStream());
-			ClientAuthenticationHandler authHandler = new ClientAuthenticationHandler(bufferedReader,inputStream, outputStream, socket);
+			ClientAuthenticationHandler authHandler = new ClientAuthenticationHandler(bufferedReader, inputStream,
+					outputStream, socket);
 			authHandler.authenticate();
-			Client client = new Client();
-			line = bufferedReader.readLine();
-			while (line != null)
-			{
-				if(line.equalsIgnoreCase("logout")){
-					client.logout();
-				}
-				else if (line.equalsIgnoreCase("list")){
-					client.list();
-				}
-				else if(line.equalsIgnoreCase("leaderboard")){
-					
-					client.leaderboard();
-				}
-				else{
-					client.invalidCommand();
+			Client cl = new Client();
+			IncomingMessageThread icmThread = new IncomingMessageThread(socket, bufferedReader, inputStream, outputStream, cl);
+			icmThread.run();
+			UserInputThread uiThread = new UserInputThread(socket, bufferedReader, inputStream, outputStream, cl);
+			uiThread.run();
 
-				}
-				line = bufferedReader.readLine();
-
-
-			}
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -55,74 +135,118 @@ public class Client {
 		}
 
 	}
-	
-	private void leaderboard() {
+
+	public void unbanUser(String command) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void banUser(String command) {
+		try {
+			line = "s2 " + command;
+			outputStream.println(line);
+			outputStream.flush();
+			String response = inputStream.readLine();
+			if (response.contains("does not exist")) {
+				System.out.println(response);
+			} else if (response.contains("is banned")) {
+				System.out.println(response);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.print("IO Exception");
+		}
+	}
+
+	public void newGameroomWithPlayer(String command) {
+		try {
+			line = "s2 " + command;
+			outputStream.println(line);
+			outputStream.flush();
+			String response = inputStream.readLine();
+			if (response.contains("does not exist")) {
+				System.out.println(response);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.print("IO Exception");
+		}
+	}
+
+	public void newGameroom(String command) {
+
+		line = "s3 " + command;
+		outputStream.println(line);
+		outputStream.flush();
+
+	}
+
+	public void leaderboard() {
 		try {
 			line = "s1 leaderboard";
 			outputStream.println(line);
 			outputStream.flush();
 			String userNames;
-			String gameRooms = null; 
+			String gameRooms = null;
 			userNames = inputStream.readLine();
 			gameRooms = inputStream.readLine();
-		    String[] userNameArray = userNames.split(",");
-		    String[] scoresArray = gameRooms.split(",");
-		    Map<String, String> leaderboard = new HashMap <String, String>();
-			for (int i = 0; i < userNameArray.length; i++){
-				
+			String[] userNameArray = userNames.split(",");
+			String[] scoresArray = gameRooms.split(",");
+			Map<String, String> leaderboard = new HashMap<String, String>();
+			for (int i = 0; i < userNameArray.length; i++) {
+
 				leaderboard.put(userNameArray[i], scoresArray[i]);
 			}
-			for (Map.Entry<String, String> entry : leaderboard.entrySet()){
-				
-				System.out.println("Player: " + entry.getKey() + " | " + " Score: " +  entry.getValue());
+			for (Map.Entry<String, String> entry : leaderboard.entrySet()) {
+
+				System.out.println("Player: " + entry.getKey() + " | Score: " + entry.getValue());
 			}
 
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.out.println("Client read error");
 		}
-		
+
 	}
 
-	private void list(){
+	public void list() {
 		try {
 			line = "s1 list";
 			outputStream.println(line);
 			outputStream.flush();
 			String userNames;
-			String gameRooms = null; 
+			String gameRooms = null;
 			userNames = inputStream.readLine();
 			gameRooms = inputStream.readLine();
-		    String[] userNameArray = userNames.split(",");
-		    String[] gameRoomsArray = gameRooms.split(",");
-		    Map<String, String> users = new HashMap <String, String>();
-			for (int i = 0; i < userNameArray.length; i++){
-				
+			String[] userNameArray = userNames.split(",");
+			String[] gameRoomsArray = gameRooms.split(",");
+			Map<String, String> users = new HashMap<String, String>();
+			for (int i = 0; i < userNameArray.length; i++) {
+
 				users.put(userNameArray[i], gameRoomsArray[i]);
 			}
-			for (Map.Entry<String, String> entry : users.entrySet()){
-				
-				System.out.println(entry.getKey() + " | " + entry.getValue());
+			for (Map.Entry<String, String> entry : users.entrySet()) {
+
+				System.out.println("Player: " + entry.getKey() + " | Instance: " + entry.getValue());
 			}
 
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.out.println("Client read error");
 		}
-		
-		
+
 	}
-	
-	private void logout(){
-		
+
+	public void logout() {
+
 		try {
 			line = "s1 logout";
 			outputStream.println(line);
 			outputStream.flush();
-			
+
 			String response = null;
 			response = inputStream.readLine();
-			
+
 			if (response.substring(0, 2).equals("n3")) {
 				System.out.print(response.substring(3, response.length()));
 				line = bufferedReader.readLine();
@@ -130,7 +254,7 @@ public class Client {
 				outputStream.flush();
 				response = inputStream.readLine();
 			}
-			if (response.equals("1")){
+			if (response.equals("1")) {
 				inputStream.close();
 				outputStream.close();
 				bufferedReader.close();
@@ -143,16 +267,15 @@ public class Client {
 			e.printStackTrace();
 			System.out.println("Client read error");
 		}
-		
+
 	}
-	
+
 	public void invalidCommand() {
 		System.out.println("Invalid command. Please enter a valid command");
 
 	}
 
 }
-
 
 class ClientAuthenticationHandler {
 
@@ -177,7 +300,7 @@ class ClientAuthenticationHandler {
 			response = inputStream.readLine();
 			System.out.println(response.substring(3, response.length()));
 			response = inputStream.readLine();
-			while (response.substring(0, 2).equals("n3") || response.substring(0, 2).equals("n4") ) {
+			while (response.substring(0, 2).equals("n3") || response.substring(0, 2).equals("n4")) {
 				System.out.print(response.substring(3, response.length()));
 				line = bufferedReader.readLine();
 				outputStream.println(line);

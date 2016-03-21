@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class Lobby {
 	int maxCapactity;
@@ -114,6 +115,48 @@ public class Lobby {
 		} catch (NullPointerException e) {
 			e.printStackTrace();
 
+		}
+		
+	}
+
+	public void createGameroom(Player p1, String gameroomName) {
+		GameRoom gameroom = new GameRoom(p1, gameroomName);
+		for(Entry<Player, GameRoom> entry : playerList.entrySet()){
+			if (entry.getKey() == p1){
+				entry.setValue(gameroom);
+				
+			}
+		}
+		
+	}
+
+	public void createGameroomWithUser(Player p1, Player p2, String gameroomName) {
+		GameRoom gameroom = new GameRoom(p1, p2, gameroomName);
+		
+	}
+
+	public void banUser(String command) {
+		String username = command.substring(4, command.length());
+		Player p1 = null;
+		Player p2 = null;
+		for (Map.Entry<Player, GameRoom> entry : playerList.entrySet()){
+			if (entry.getKey().getSocket() == this.socket){
+				p1 = entry.getKey();
+			}
+			else if(entry.getKey().getUserName().equalsIgnoreCase(username)){
+				p2 = entry.getKey();
+				
+			}
+			if (p2 == null){
+				
+				outputStream.println("Player " + username + " does not exist or is not online.");
+				outputStream.flush();
+			}
+			else{
+				p1.banList.add(p2);
+				outputStream.println("Player " + username + " is banned. ");
+				outputStream.flush();
+			}
 		}
 		
 	}
