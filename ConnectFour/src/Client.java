@@ -77,7 +77,7 @@ class UserInputThread implements Runnable {
 						client.newGameroomWithPlayer(line);
 					} else if (line.substring(0, 3).equalsIgnoreCase("ban")) {
 						client.banUser(line);
-					} else if (line.substring(0, 3).equalsIgnoreCase("unban")) {
+					} else if (line.substring(0, 5).equalsIgnoreCase("unban")) {
 						client.unbanUser(line);
 					}
 
@@ -123,8 +123,8 @@ public class Client {
 					outputStream, socket);
 			authHandler.authenticate();
 			Client cl = new Client();
-			IncomingMessageThread icmThread = new IncomingMessageThread(socket, bufferedReader, inputStream, outputStream, cl);
-			icmThread.run();
+			//IncomingMessageThread icmThread = new IncomingMessageThread(socket, bufferedReader, inputStream, outputStream, cl);
+			//icmThread.run();
 			UserInputThread uiThread = new UserInputThread(socket, bufferedReader, inputStream, outputStream, cl);
 			uiThread.run();
 
@@ -133,12 +133,20 @@ public class Client {
 			e.printStackTrace();
 			System.err.print("IO Exception");
 		}
-
 	}
 
 	public void unbanUser(String command) {
-		// TODO Auto-generated method stub
-
+		try {
+			line = "s2 " + command;
+			outputStream.println(line);
+			outputStream.flush();
+			String response = inputStream.readLine();
+			System.out.println(response);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.print("IO Exception");
+		}
 	}
 
 	public void banUser(String command) {
@@ -147,11 +155,8 @@ public class Client {
 			outputStream.println(line);
 			outputStream.flush();
 			String response = inputStream.readLine();
-			if (response.contains("does not exist")) {
-				System.out.println(response);
-			} else if (response.contains("is banned")) {
-				System.out.println(response);
-			}
+			System.out.println(response);
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.print("IO Exception");
@@ -164,7 +169,7 @@ public class Client {
 			outputStream.println(line);
 			outputStream.flush();
 			String response = inputStream.readLine();
-			if (response.contains("does not exist")) {
+			if (response.contains("does not exist") || response.contains("is unavailable")) {
 				System.out.println(response);
 			}
 		} catch (IOException e) {

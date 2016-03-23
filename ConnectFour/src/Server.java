@@ -16,7 +16,7 @@ public class Server {
 		userCredentials.put("John", "johndoe");
 		userCredentials.put("Jane", "janedoe");
 		userCredentials.put("Jack", "jackdoe");
-		
+
 		leaderBoards.put("John", 3);
 		leaderBoards.put("Jane", 4);
 		leaderBoards.put("Jack", 2);
@@ -57,7 +57,6 @@ public class Server {
 	}
 }
 
-
 class ServerThread extends Thread {
 
 	BufferedReader inputStream = null;
@@ -68,16 +67,17 @@ class ServerThread extends Thread {
 	Map<String, String> uc;
 	Map<String, Integer> lb;
 	List<GameRoom> gr;
-	
+
 	Player player = null;
 	Lobby lobby = null;
 
-	public ServerThread(Socket s, Map<Player, GameRoom> pl, Map<String, String> uc, Map<String, Integer> lb, List<GameRoom> gr) {
+	public ServerThread(Socket s, Map<Player, GameRoom> pl, Map<String, String> uc, Map<String, Integer> lb,
+			List<GameRoom> gr) {
 		this.s = s;
 		this.pl = pl;
 		this.uc = uc;
-		this.lb = lb; 
-		this.gr = gr; 
+		this.lb = lb;
+		this.gr = gr;
 
 	}
 
@@ -109,68 +109,83 @@ class ServerThread extends Thread {
 					lobby.leaderboard(lb);
 					line = inputStream.readLine();
 				}
-				
+
 				else if (line.substring(3, 6).equalsIgnoreCase("ban")) {
 					lobby.banUser(line);
 					line = inputStream.readLine();
 				}
 				
-				else if (line.substring(3,6).equalsIgnoreCase("new")) {
-					String[] commands=line.split("\\s+");
-					for(GameRoom room : gr){
-						if (room.getGameRoomName().equals(commands[1])){
+				else if(line.substring(3, 8).equals("unban")){
+					lobby.unbanUser(line);
+					line = inputStream.readLine();
+				}
+
+				else if (line.substring(3, 6).equalsIgnoreCase("new")) {
+					String[] commands = line.split("\\s+");
+					for (GameRoom room : gr) {
+						if (room.getGameRoomName().equals(commands[1])) {
 							outputStream.println("A gameroom with the name " + commands[1] + " already exists.");
 							outputStream.flush();
 							break;
 						}
 					}
-					
-					if (commands.length -1 == 2){
+
+					if (commands.length - 1 == 2) {
 						String gameroomName = commands[2];
-						Player p1; 
-						for (Map.Entry<Player, GameRoom> entry : pl.entrySet()){
-							if (entry.getKey().getSocket() == this.s){
+						Player p1;
+						for (Map.Entry<Player, GameRoom> entry : pl.entrySet()) {
+							if (entry.getKey().getSocket() == this.s) {
 								p1 = entry.getKey();
 								lobby.createGameroom(p1, gameroomName);
 							}
 						}
-					}
-					else if (commands.length -1 == 3){
+					} else if (commands.length - 1 == 3) {
 						String gameroomName = commands[2];
 						Player p1 = null;
 						Player p2 = null;
-						for (Map.Entry<Player, GameRoom> entry : pl.entrySet()){
-							if (entry.getKey().getSocket() == this.s){
+						for (Map.Entry<Player, GameRoom> entry : pl.entrySet()) {
+							if (entry.getKey().getSocket() == this.s) {
 								p1 = entry.getKey();
-							}
-							else if(entry.getKey().getUserName().equalsIgnoreCase(commands[3])){
+							} else if (entry.getKey().getUserName().equalsIgnoreCase(commands[3])) {
 								p2 = entry.getKey();
-								
+
 							}
 						}
-						if (p2 == null){
-							
+						if (p2 == null) {
+
 							outputStream.println("Player " + commands[3] + " does not exist or is not online.");
 							outputStream.flush();
-						}
-						else{
-							BufferedReader inputStreamP2 = new BufferedReader(new InputStreamReader(p2.getSocket().getInputStream()));
-							PrintWriter outputStreamP2 = new PrintWriter(p2.getSocket().getOutputStream());
-							outputStreamP2.println("Player " + p1.getUserName() + " is requesting a game with you. Do you wish to join?");
-							outputStreamP2.flush();
-							line = inputStream.readLine();
-							if (!line.equals("yes")){
-								outputStreamP2.println("Player " + p2.getUserName() + " declined your game request");
-								outputStreamP2.flush();
+						} else {
+							boolean isBanned = false;
+							List<Player> banlist = p2.banList;
+							for (Player p : banlist) {
+								if (p.getUserName().equals(p1.getUserName())) {
+									outputStream.println("Player " + commands[3] + " is unavailable.");
+									outputStream.flush();
+									isBanned = true;
+								}
+
 							}
-							else{
-								lobby.createGameroomWithUser(p1, p2, gameroomName);
+							if (!isBanned) {
+								BufferedReader inputStreamP2 = new BufferedReader(
+										new InputStreamReader(p2.getSocket().getInputStream()));
+								PrintWriter outputStreamP2 = new PrintWriter(p2.getSocket().getOutputStream());
+								outputStreamP2.println("Player " + p1.getUserName()
+										+ " is requesting a game with you. Do you wish to join?");
+								outputStreamP2.flush();
+								line = inputStream.readLine();
+								if (!line.equals("yes")) {
+									outputStreamP2
+											.println("Player " + p2.getUserName() + " declined your game request");
+									outputStreamP2.flush();
+								} else {
+									lobby.createGameroomWithUser(p1, p2, gameroomName);
+								}
 							}
 						}
 					}
 					line = inputStream.readLine();
 				}
-
 
 			}
 
