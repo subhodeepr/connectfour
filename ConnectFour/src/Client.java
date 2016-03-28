@@ -10,7 +10,7 @@ class IncomingMessageThread implements Runnable {
 	BufferedReader bufferedReader = null;
 	BufferedReader inputStream = null;
 	PrintWriter outputStream = null;
-	Client client; 
+	Client client;
 
 	public IncomingMessageThread(Socket s, BufferedReader br, BufferedReader is, PrintWriter os, Client cl) {
 		socket = s;
@@ -61,10 +61,10 @@ class UserInputThread implements Runnable {
 	public void run() {
 
 		try {
-				line = bufferedReader.readLine();
-				while (line != null) {
-					String[] commands = line.split("\\s+");
-
+			line = bufferedReader.readLine();
+			while (line != null) {
+				String[] commands = line.split("\\s+");
+				if (line.length() > 3) {
 					if (line.equalsIgnoreCase("logout")) {
 						client.logout();
 					} else if (line.equalsIgnoreCase("list")) {
@@ -75,20 +75,26 @@ class UserInputThread implements Runnable {
 						client.newGameroom(line);
 					} else if (line.substring(0, 3).equalsIgnoreCase("new") && commands.length == 3) {
 						client.newGameroomWithPlayer(line);
-					} else if (line.substring(0, 3).equalsIgnoreCase("ban")) {
+					} else if (line.substring(0, 3).equalsIgnoreCase("ban") && commands.length == 2) {
 						client.banUser(line);
-					} else if (line.substring(0, 5).equalsIgnoreCase("unban")) {
+					} else if (line.contains("unban") && commands.length == 2) {
 						client.unbanUser(line);
+					} else if (line.contains("join") && commands.length == 2) {
+						client.joinGame(line);
 					}
 
 					else {
 						client.invalidCommand();
 
 					}
-					line = bufferedReader.readLine();
+				} else {
+					client.invalidCommand();
 
 				}
-			
+				line = bufferedReader.readLine();
+
+			}
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -123,16 +129,37 @@ public class Client {
 					outputStream, socket);
 			authHandler.authenticate();
 			Client cl = new Client();
-			//IncomingMessageThread icmThread = new IncomingMessageThread(socket, bufferedReader, inputStream, outputStream, cl);
-			//icmThread.run();
+			// IncomingMessageThread icmThread = new
+			// IncomingMessageThread(socket, bufferedReader, inputStream,
+			// outputStream, cl);
+			// icmThread.run();
 			UserInputThread uiThread = new UserInputThread(socket, bufferedReader, inputStream, outputStream, cl);
 			uiThread.run();
-
 
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.print("IO Exception");
 		}
+	}
+
+	public void joinGame(String command) {
+		try {
+			line = "s2 " + command;
+			outputStream.println(line);
+			outputStream.flush();
+			String response = inputStream.readLine();
+			System.out.println(response);
+			if (response.contains("No gameroom") || response.contains("is full")) {
+				return;
+			} else {
+				gameLoop();
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.print("IO Exception");
+		}
+
 	}
 
 	public void unbanUser(String command) {
@@ -142,7 +169,7 @@ public class Client {
 			outputStream.flush();
 			String response = inputStream.readLine();
 			System.out.println(response);
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.print("IO Exception");
@@ -156,7 +183,7 @@ public class Client {
 			outputStream.flush();
 			String response = inputStream.readLine();
 			System.out.println(response);
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.print("IO Exception");
@@ -179,10 +206,57 @@ public class Client {
 	}
 
 	public void newGameroom(String command) {
+		try {
+			line = "s3 " + command;
+			outputStream.println(line);
+			outputStream.flush();
+			String response;
+			response = inputStream.readLine();
+			System.out.println(response);
+			if (!response.contains("already exists")) {
 
-		line = "s3 " + command;
-		outputStream.println(line);
-		outputStream.flush();
+				response = inputStream.readLine();
+				System.out.println(response);
+				response = inputStream.readLine();
+				System.out.println(response);
+				gameLoop();
+			}
+
+		} catch (IOException e) {
+
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	private void gameLoop() {
+		try {
+			line = bufferedReader.readLine();
+			while (line != null) {
+				if (line.equals("quit")) {
+					line = "s1 " + line;
+					outputStream.println(line);
+					outputStream.flush();
+					String response = inputStream.readLine();
+					System.out.println(response);
+					line = bufferedReader.readLine();
+					if (line.equals("yes")) {
+						outputStream.println(line);
+						outputStream.flush();
+						System.out.println("You have quit the game");
+						System.out.println("You are in lobby 1");
+						return;
+					}
+
+				}
+				line = bufferedReader.readLine();
+			}
+		} catch (IOException e) {
+
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 

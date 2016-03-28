@@ -91,4 +91,19 @@ public class GameRoom {
 		
 		return gameRoomName;
 	}
+	
+	public void setPlayer1(Player p){
+		player1 = p;
+	}
+	public void setPlayer2(Player p){
+		player2 = p;
+	}
+	
+	public Player getPlayer1() {
+		return player1;
+	}
+
+	public Player getPlayer2() {
+		return player2;
+	}
 }
