@@ -57,7 +57,7 @@ public class GameRoom {
 		//testing to see if the user can input into the board correctly
 		//this user input should be on the client class, just testing this for now
 		user_ascii = (int) user_move.charAt(0); // grab the ascii value of input
-		if (gl.validateMove(user_move)){   //CHANGE TO USER MOVE
+		if (gl.validateMove(user_move, board)){   //CHANGE TO USER MOVE
 			for(int i = 5; i < board.length; i--){
 				if(board[i][user_ascii - ascii_value] == "_"){
 					if (gl.nextPlayer() % 2 == 0){		// need to double check which player goes first
@@ -72,6 +72,7 @@ public class GameRoom {
 			}
 			gl.checkHorizontal(board);
 			gl.checkVertical(board);
+			gl.checkDiagonal(board);
 		}
 		else{
 			System.out.println("Incorrect input\n");
