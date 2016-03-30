@@ -97,7 +97,17 @@ class ServerThread extends Thread {
 			lobby = new Lobby(inputStream, outputStream, s, pl, player, gr);
 			line = inputStream.readLine();
 			while (line != null) {
-				if (line.substring(3, line.length()).equalsIgnoreCase("logout")) {
+				if(line.substring(0, 2).equals("c1")){
+					
+					lobby.publicChat(line);
+					line = inputStream.readLine();
+				}
+				if(line.substring(0, 2).equals("c2")){
+					
+					lobby.privateChat(line);
+					line = inputStream.readLine();
+				}
+				else if (line.substring(3, line.length()).equalsIgnoreCase("logout")) {
 					lobby.logout();
 					line = inputStream.readLine();
 
@@ -125,6 +135,7 @@ class ServerThread extends Thread {
 					lobby.joinGameroom(line);
 					line = inputStream.readLine();
 				}
+
 
 				else if (line.substring(3, 6).equalsIgnoreCase("new")) {
 					boolean exists = false;
@@ -175,20 +186,10 @@ class ServerThread extends Thread {
 
 								}
 								if (!isBanned) {
-									BufferedReader inputStreamP2 = new BufferedReader(
-											new InputStreamReader(p2.getSocket().getInputStream()));
-									PrintWriter outputStreamP2 = new PrintWriter(p2.getSocket().getOutputStream());
-									outputStreamP2.println("Player " + p1.getUserName()
-											+ " is requesting a game with you. Do you wish to join?");
-									outputStreamP2.flush();
-									line = inputStreamP2.readLine();
-									if (!line.equals("yes")) {
-										outputStream
-												.println("Player " + p2.getUserName() + " declined your game request");
-										outputStream.flush();
-									} else {
+										p1.setPlayerToken('X');
+										p2.setPlayerToken('Y');
 										lobby.createGameroomWithUser(p1, p2, gameroomName);
-									}
+									
 								}
 							}
 						}

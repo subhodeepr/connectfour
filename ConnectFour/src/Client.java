@@ -26,7 +26,6 @@ class IncomingMessageThread implements Runnable {
 			while (inputStream.ready()) {
 				line = inputStream.readLine();
 				while (line != null) {
-
 					System.out.println(line);
 					line = inputStream.readLine();
 
@@ -61,37 +60,53 @@ class UserInputThread implements Runnable {
 	public void run() {
 
 		try {
-			line = bufferedReader.readLine();
-			while (line != null) {
-				String[] commands = line.split("\\s+");
-				if (line.length() > 3) {
-					if (line.equalsIgnoreCase("logout")) {
-						client.logout();
-					} else if (line.equalsIgnoreCase("list")) {
-						client.list();
-					} else if (line.equalsIgnoreCase("leaderboard")) {
-						client.leaderboard();
-					} else if (line.substring(0, 3).equalsIgnoreCase("new") && commands.length == 2) {
-						client.newGameroom(line);
-					} else if (line.substring(0, 3).equalsIgnoreCase("new") && commands.length == 3) {
-						client.newGameroomWithPlayer(line);
-					} else if (line.substring(0, 3).equalsIgnoreCase("ban") && commands.length == 2) {
-						client.banUser(line);
-					} else if (line.contains("unban") && commands.length == 2) {
-						client.unbanUser(line);
-					} else if (line.contains("join") && commands.length == 2) {
-						client.joinGame(line);
-					}
+			while (true) {
+				if (bufferedReader.ready()) {
+					line = bufferedReader.readLine();
+					String[] commands = line.split("\\s+");
+					if (line.length() > 3) {
+						if (line.substring(0, 1).equalsIgnoreCase("y")) {
+							client.publicChat(line);
+						} else if (line.substring(0, 1).equalsIgnoreCase("p")) {
+							client.privateChat(line);
+						}
+						else if (line.equalsIgnoreCase("logout")) {
+							client.logout();
+						} else if (line.equalsIgnoreCase("list")) {
+							client.list();
+						} else if (line.equalsIgnoreCase("leaderboard")) {
+							client.leaderboard();
+						} else if (line.substring(0, 3).equalsIgnoreCase("new") && commands.length == 2) {
+							client.newGameroom(line);
+						} else if (line.substring(0, 3).equalsIgnoreCase("new") && commands.length == 3) {
+							client.newGameroomWithPlayer(line);
+						} else if (line.substring(0, 3).equalsIgnoreCase("ban") && commands.length == 2) {
+							client.banUser(line);
+						} else if (line.contains("unban") && commands.length == 2) {
+							client.unbanUser(line);
+						} else if (line.contains("join") && commands.length == 2) {
+							client.joinGame(line);
+						} else if (line.substring(0, 1).equalsIgnoreCase("y")) {
+							client.publicChat(line);
+						} else if (line.substring(0, 1).equalsIgnoreCase("y")) {
+							client.publicChat(line);
+						}
 
-					else {
+						else {
+							client.invalidCommand();
+
+						}
+					} else {
 						client.invalidCommand();
 
 					}
-				} else {
-					client.invalidCommand();
+				}
+
+				if (inputStream.ready()) {
+					line = inputStream.readLine();
+					System.out.println(line);
 
 				}
-				line = bufferedReader.readLine();
 
 			}
 
@@ -140,6 +155,20 @@ public class Client {
 			e.printStackTrace();
 			System.err.print("IO Exception");
 		}
+	}
+
+	public void publicChat(String line2) {
+
+		line = "c1 " + line2;
+		outputStream.println(line);
+		outputStream.flush();
+	}
+	
+	public void privateChat(String line2) {
+
+		line = "c2 " + line2;
+		outputStream.println(line);
+		outputStream.flush();
 	}
 
 	public void joinGame(String command) {
@@ -198,6 +227,15 @@ public class Client {
 			String response = inputStream.readLine();
 			if (response.contains("does not exist") || response.contains("is unavailable")) {
 				System.out.println(response);
+			} else {
+				System.out.println(response);
+				response = inputStream.readLine();
+				System.out.println(response);
+				response = inputStream.readLine();
+				System.out.println(response);
+
+				gameLoop();
+
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -289,30 +327,9 @@ public class Client {
 	}
 
 	public void list() {
-		try {
-			line = "s1 list";
-			outputStream.println(line);
-			outputStream.flush();
-			String userNames;
-			String gameRooms = null;
-			userNames = inputStream.readLine();
-			gameRooms = inputStream.readLine();
-			String[] userNameArray = userNames.split(",");
-			String[] gameRoomsArray = gameRooms.split(",");
-			Map<String, String> users = new HashMap<String, String>();
-			for (int i = 0; i < userNameArray.length; i++) {
-
-				users.put(userNameArray[i], gameRoomsArray[i]);
-			}
-			for (Map.Entry<String, String> entry : users.entrySet()) {
-
-				System.out.println("Player: " + entry.getKey() + " | Instance: " + entry.getValue());
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.out.println("Client read error");
-		}
+		line = "s1 list";
+		outputStream.println(line);
+		outputStream.flush();
 
 	}
 
