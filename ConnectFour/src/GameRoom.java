@@ -8,7 +8,23 @@ public class GameRoom {
 	int user_ascii;
 	char base_value = 'A';
 	int ascii_value = (int) base_value;
+	private String gameRoomName = null;
+	private Player player1;
+	private Player player2;
 
+	
+	public GameRoom(Player p1, String grn){
+		
+		gameRoomName = grn; 
+		player1 = p1;
+	}
+	
+	public GameRoom(Player p1, Player p2, String grn){
+		
+		gameRoomName = grn; 
+		player1 = p1;
+		player2 = p2;
+	}
 	
 	// set the initial board values
 	public GameRoom(){
@@ -69,5 +85,25 @@ public class GameRoom {
 	
 	public void disconnectPlayer(){
 		
+	}
+	
+	public String getGameRoomName(){
+		
+		return gameRoomName;
+	}
+	
+	public void setPlayer1(Player p){
+		player1 = p;
+	}
+	public void setPlayer2(Player p){
+		player2 = p;
+	}
+	
+	public Player getPlayer1() {
+		return player1;
+	}
+
+	public Player getPlayer2() {
+		return player2;
 	}
 }
