@@ -104,8 +104,40 @@ class ServerThread extends Thread {
 				}
 				if(line.substring(0, 2).equals("c2")){
 					
-					lobby.privateChat(line);
+					String[] commands = line.split("\\s+");
+					Player p1 = null;
+					Player p2 = null;
+					for (Map.Entry<Player, GameRoom> entry : pl.entrySet()) {
+						if (entry.getKey().getSocket() == this.s) {
+							p1 = entry.getKey();
+						} else if (entry.getKey().getUserName().equalsIgnoreCase(commands[2])) {
+							p2 = entry.getKey();
+
+						}
+					}
+					if (p2 == null) {
+
+						outputStream.println("Player " + commands[2] + " does not exist or is not online.");
+						outputStream.flush();
+					} else {
+						boolean isBanned = false;
+						List<Player> banlist = p2.banList;
+						for (Player p : banlist) {
+							if (p.getUserName().equals(p1.getUserName())) {
+								outputStream.println("Player " + commands[2] + " is unavailable.");
+								outputStream.flush();
+								isBanned = true;
+							}
+
+						}
+						if (!isBanned) {
+							lobby.privateChat(line);
+							
+						}
+					}
 					line = inputStream.readLine();
+
+
 				}
 				else if (line.substring(3, line.length()).equalsIgnoreCase("logout")) {
 					lobby.logout();

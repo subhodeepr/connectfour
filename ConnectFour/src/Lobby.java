@@ -10,78 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 
-class GameLoopThread implements Runnable{
-	
-	Socket socket = null;
-	String line = null;
-	BufferedReader inputStream = null;
-	PrintWriter outputStream = null;
-	Map<Player, GameRoom> playerList;
-	List<GameRoom> gamerooms;
-	Player player;
-	String gameroomName;
-	GameRoom gameroom; 
-	
-	public GameLoopThread(Socket s, BufferedReader is, PrintWriter os, Map<Player, GameRoom> pl, List <GameRoom> gr, Player p, String gameroomName, GameRoom gameroom){
-		socket = s;
-		outputStream = os;
-		playerList = pl;
-		gamerooms = gr;
-		player = p;
-		this.gameroomName = gameroomName;
-		this.gameroom = gameroom; 
-		
-	}
-	
-	@Override
-	public void run() {
-		gameLoop(player, gameroomName, gameroom);
-		
-	}
-	
-	private void gameLoop(Player p, String gameroomName, GameRoom gameroom) {
-		try {
-			line = inputStream.readLine();
-			while (line != null) {
-				if (line.contains("quit")) {
-					String msg = "Are you sure you want to quit the game?";
-					outputStream.println(msg);
-					outputStream.flush();
-					line = inputStream.readLine();
-					if (line.equals("yes")) {
-						for (Entry<Player, GameRoom> entry : playerList.entrySet()) {
-							if (entry.getKey() == p) {
-								entry.setValue(null);
-								if (gameroom.getPlayer1() != null) {
-									if (gameroom.getPlayer1() == p)
-										gameroom.setPlayer1(null);
-								}
-								if (gameroom.getPlayer2() != null) {
-									if (gameroom.getPlayer2() == p)
-										gameroom.setPlayer2(null);
-								}
-								if (gameroom.getPlayer1() == null && gameroom.getPlayer2() == null) {
-									gamerooms.remove(gameroom);
-								}
-							}
-						}
-						return;
-					}
-				}
-			}
-			line = inputStream.readLine();
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-
-	
-}
-
-
 
 public class Lobby {
 	int maxCapactity;
@@ -193,6 +121,47 @@ public class Lobby {
 	}
 
 	
+	private void gameLoop(Player p, String gameroomName, GameRoom gameroom){
+		try {
+			line = inputStream.readLine();
+			while (line != null) {
+				if (line.contains("quit")) {
+					String msg = "Are you sure you want to quit the game?";
+					outputStream.println(msg);
+					outputStream.flush();
+					line = inputStream.readLine();
+					if (line.equals("yes")) {
+						for (Entry<Player, GameRoom> entry : playerList.entrySet()) {
+							if (entry.getKey() == p) {
+								entry.setValue(null);
+								if(gameroom.getPlayer1() != null){
+									if (gameroom.getPlayer1() == p)
+										gameroom.setPlayer1(null);
+								}
+								if(gameroom.getPlayer2() !=null){
+									if (gameroom.getPlayer2() == p)
+										gameroom.setPlayer2(null);
+								}
+								if (gameroom.getPlayer1() == null && gameroom.getPlayer2() == null){
+									gamerooms.remove(gameroom);
+								}
+							}
+						}
+						return;
+					}
+				}
+			}
+			line = inputStream.readLine();
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		
+		
+	}
+
 	public void createGameroom(Player p1, String gameroomName) {
 		GameRoom gameroom = new GameRoom(p1, gameroomName);
 		gamerooms.add(gameroom);
@@ -205,8 +174,8 @@ public class Lobby {
 				+ "Waiting on another player to join...";
 		outputStream.println(msg);
 		outputStream.flush();
-		GameLoopThread p1Thread = new GameLoopThread(socket, inputStream, outputStream, playerList, gamerooms, p1,  gameroomName, gameroom);
-		p1Thread.run();
+		gameLoop(p1, gameroomName, gameroom);
+
 	}
 
 	public void createGameroomWithUser(Player p1, Player p2, String gameroomName) {
@@ -221,17 +190,14 @@ public class Lobby {
 				}
 			}
 			String msg = gameroomName + " created" + "\n" + "You are in " + gameroomName + "\n" + p2.getUserName()
-					+ " has joined your game.";
+					+ " has joined the game.";
 			outputStream.println(msg);
 			outputStream.flush();
 			String msg2 = gameroomName + " created" + "\n" + "You are in " + gameroomName + "\n" + p1.getUserName()
-					+ " has joined your game.";
+					+ " has joined the game.";
 			outputStreamP2.println(msg2);
 			outputStreamP2.flush();
-			GameLoopThread p1Thread = new GameLoopThread(socket, inputStream, outputStream, playerList, gamerooms, p1,  gameroomName, gameroom);
-			p1Thread.run();
-			GameLoopThread p2Thread = new GameLoopThread(socket, inputStream, outputStream, playerList, gamerooms, p2,  gameroomName, gameroom);
-			p2Thread.run();
+			gameLoop(p1, gameroomName, gameroom);
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -309,8 +275,7 @@ public class Lobby {
 					room.setPlayer2(player);
 					outputStream.println("You have joined " + room.getGameRoomName());
 					outputStream.flush();
-					GameLoopThread p2Thread = new GameLoopThread(socket, inputStream, outputStream, playerList, gamerooms, player,  room.getGameRoomName(), room);
-					p2Thread.run();
+					gameLoop(player, commands[2], room);
 				}
 
 			}

@@ -4,42 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-class IncomingMessageThread implements Runnable {
-	Socket socket = null;
-	String line = null;
-	BufferedReader bufferedReader = null;
-	BufferedReader inputStream = null;
-	PrintWriter outputStream = null;
-	Client client;
 
-	public IncomingMessageThread(Socket s, BufferedReader br, BufferedReader is, PrintWriter os, Client cl) {
-		socket = s;
-		bufferedReader = br;
-		inputStream = is;
-		outputStream = os;
-		client = cl;
-	}
-
-	public void run() {
-
-		try {
-			while (inputStream.ready()) {
-				line = inputStream.readLine();
-				while (line != null) {
-					System.out.println(line);
-					line = inputStream.readLine();
-
-				}
-
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-
-}
 
 class UserInputThread implements Runnable {
 	Socket socket = null;
@@ -86,11 +51,7 @@ class UserInputThread implements Runnable {
 							client.unbanUser(line);
 						} else if (line.contains("join") && commands.length == 2) {
 							client.joinGame(line);
-						} else if (line.substring(0, 1).equalsIgnoreCase("y")) {
-							client.publicChat(line);
-						} else if (line.substring(0, 1).equalsIgnoreCase("y")) {
-							client.publicChat(line);
-						}
+						} 
 
 						else {
 							client.invalidCommand();
